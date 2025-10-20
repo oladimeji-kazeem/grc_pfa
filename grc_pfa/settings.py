@@ -111,6 +111,18 @@ DATABASES = {
     }
 }
 
+# NEO4J CONFIGURATION (Hybrid Persistence Model)
+NEOMODEL_NEO4J_BOLT_URL = 'bolt://neo4j:password@localhost:7687'  # <-- UPDATE THIS
+NEOMODEL_MAX_CONNECTION_LIFETIME = 3600
+NEOMODEL_ENCRYPTED = False
+
+# Initialize neomodel config to connect
+try:
+    from neomodel import config as neomodel_config
+    neomodel_config.DATABASE_URL = NEOMODEL_NEO4J_BOLT_URL
+except ImportError:
+    pass
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
