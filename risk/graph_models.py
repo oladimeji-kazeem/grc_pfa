@@ -1,6 +1,6 @@
 from neomodel import (
     StructuredNode, StringProperty, UniqueIdProperty, RelationshipTo, config,
-    IntegerProperty, FloatProperty, ArrayProperty
+    IntegerProperty, FloatProperty, ArrayProperty # <-- Added ArrayProperty
 )
 from django.conf import settings
 
@@ -14,9 +14,7 @@ class ComplianceRequirementNode(StructuredNode):
     requirement_code = StringProperty(unique=True)
     source = StringProperty()
     category = StringProperty()
-    
-    # Store embedding for NLP similarity search (e.g., Policy -> Requirement mapping)
-    description_embedding = ArrayProperty(FloatProperty(), default=[]) 
+    description_embedding = ArrayProperty(FloatProperty(), default=[]) # Added Embedding Field
     
     class Meta:
         db_label = "ComplianceRequirement"
@@ -35,9 +33,7 @@ class PolicyNode(StructuredNode):
     title = StringProperty(required=True)
     category = StringProperty()
     status = StringProperty()
-    
-    # Store embedding for NLP similarity search (e.g., Policy -> Requirement mapping)
-    description_embedding = ArrayProperty(FloatProperty(), default=[]) 
+    description_embedding = ArrayProperty(FloatProperty(), default=[]) # Added Embedding Field
     
     maps_to_requirement = RelationshipTo(ComplianceRequirementNode, 'MAPS_TO')
     covered_by_control = RelationshipTo(ControlNode, 'COVERS')
@@ -61,13 +57,11 @@ class RiskNode(StructuredNode):
     likelihood = IntegerProperty()
     impact = IntegerProperty()
     risk_score = IntegerProperty()
-    
-    # Store embedding for GNN feature processing and Cognitive Risk Radar analysis
-    description_embedding = ArrayProperty(FloatProperty(), default=[])
+    description_embedding = ArrayProperty(FloatProperty(), default=[]) # Added Embedding Field
 
     linked_to_objective = RelationshipTo(CorporateObjectiveNode, 'LINKED_TO')
 
     class Meta:
         db_label = "Risk"
 
-# Note: All necessary modifications for embedding storage are included.
+# Note: The Neo4j connection initialization is usually done in settings.py or app config.

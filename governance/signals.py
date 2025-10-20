@@ -3,6 +3,8 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from .models import Policy, Control, CorporateObjective # Import relational models
 from .graph_models import PolicyNode, ControlNode, CorporateObjectiveNode
+from risk.tasks import process_text_embedding 
+
 
 # Signal to handle Policy creation/update
 @receiver(post_save, sender=Policy)
@@ -25,6 +27,30 @@ def delete_policy_graph(sender, instance, **kwargs):
         PolicyNode.nodes.get(uid=str(instance.id)).delete()
     except PolicyNode.DoesNotExist:
         pass
+
+# --- Policy Signals ---
+@receiver(post_save, sender=Policy)
+def update_policy_graph_and_embed(sender, instance, created, **kwargs):
+    uid_str = str(instance.id)
+    text_content = f"Title: {instance.title}. Description: {instance.description or ''}"
+    
+    # 1. Synchronize basic data with Neo4j (immediate operation)
+    if created:
+        PolicyNode.create(uid=uid_str, title=instance.title, category=instance.category, status=instance.status)
+    else:
+        # Optimization: only fetch node if fields changed, though for simplicity here we update all fields
+        policy_node = PolicyNode.nodes.get(uid=uid_str)
+        policy_node.title = instance.title
+        policy_node.category = instance.category
+        policy_node.status = instance.status
+        policy_node.save()
+
+    # 2. Queue AI Embedding Task (asynchronous operation)
+    # The delay prevents blocking the user request and uses Celery for heavy lifting.
+    process_text_embedding.apply_async(
+        args=['policy', uid_str, text_content],
+        countdown=5 # Start embedding after a small delay (5 seconds)
+    )
 
 # Signal to handle CorporateObjective creation/update
 @receiver(post_save, sender=CorporateObjective)
